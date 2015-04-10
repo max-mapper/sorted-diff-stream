@@ -1,6 +1,6 @@
 {
   "name": "sorted-diff-stream",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "given two sorted streams will emit only pairs that do not match",
   "main": "index.js",
   "scripts": {
