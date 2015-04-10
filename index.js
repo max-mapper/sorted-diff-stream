@@ -27,14 +27,24 @@ function iterate (streamA, streamB, isEqual) {
         // if at end of both streams
         if (!dataA && !dataB) return cb(null, null)
 
-        // if at end of A or key mismatch
-        if (!dataA || dataB.key < dataA.key) {
+        // if at end of A
+        if (!dataA) {
           nextB()
           return cb(null, [null, dataB])
         }
 
-        // if at end of B or key mismatch
-        if (!dataB || dataA.key < dataB.key) {
+        // if at end of B
+        if (!dataB) {
+          nextA()
+          return cb(null, [dataA, null])
+        }
+
+        if (dataB.key < dataA.key) {
+          nextB()
+          return cb(null, [null, dataB])
+        }
+
+        if (dataA.key < dataB.key) {
           nextA()
           return cb(null, [dataA, null])
         }
