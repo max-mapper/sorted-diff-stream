@@ -23,8 +23,8 @@ var b = through()
 var diffs = diffStream(a, b, isEqual)
  
 // this is the default, you dont have to pass `isEqual` above
-function isEqual (a, b) {
-  if (a.value === b.value) return true
+function isEqual (a, b, cb) {
+  cb(null, a.value === b.value)
   // you can implement your own equality check here instead
 }
  
