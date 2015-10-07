@@ -3,11 +3,12 @@ var from = require('from2')
 
 module.exports = iterate
 
-function iterate (streamA, streamB, isEqual) {
+function iterate (streamA, streamB, isEqual, compare) {
   var readA = streamIterate(streamA)
   var readB = streamIterate(streamB)
 
   if (!isEqual) isEqual = defaultEqual
+  if (!compare) compare = defaultCompare
 
   var stream = from.obj(read)
 
@@ -39,30 +40,34 @@ function iterate (streamA, streamB, isEqual) {
           return cb(null, [dataA, null])
         }
 
-        if (dataB.key < dataA.key) {
-          nextB()
-          return cb(null, [null, dataB])
-        }
-
-        if (dataA.key < dataB.key) {
-          nextA()
-          return cb(null, [dataA, null])
-        }
-
-        // dont write anything out if they are equal
-        isEqual(dataA, dataB, function result (err, equal) {
+        compare(dataA, dataB, function result (err, compared) {
           if (err) return cb(err)
 
-          if (equal) {
-            nextA()
+          if (compared > 0) {
             nextB()
-            return read(size, cb)
+            return cb(null, [null, dataB])
           }
 
-          // if they are diff write both out
-          nextA()
-          nextB()
-          return cb(null, [dataA, dataB])
+          if (compared < 0) {
+            nextA()
+            return cb(null, [dataA, null])
+          }
+
+          // dont write anything out if they are equal
+          isEqual(dataA, dataB, function result (err, equal) {
+            if (err) return cb(err)
+
+            if (equal) {
+              nextA()
+              nextB()
+              return read(size, cb)
+            }
+
+            // if they are diff write both out
+            nextA()
+            nextB()
+            return cb(null, [dataA, dataB])
+          })
         })
       })
     })
@@ -71,4 +76,8 @@ function iterate (streamA, streamB, isEqual) {
 
 function defaultEqual (a, b, cb) {
   cb(null, a.value === b.value)
+}
+
+function defaultCompare (a, b, cb) {
+  cb(null, a.key > b.key ? 1 : a.key < b.key ? -1 : 0)
 }

@@ -1,7 +1,7 @@
 var diffStream = require('./')
 var test = require('tape')
 var through = require('through2')
- 
+
 test('sorts', function (t) {
   t.plan(2)
   var a = through.obj()
@@ -18,14 +18,14 @@ test('sorts', function (t) {
   b.write({key: 4, value: 'd'})
   b.write({key: 5, value: 'e'})
   b.end()
-  
+
   var diffs = diffStream(a, b)
-  
+
   var expects = [
     [{key: 2, value: 'b'}, null],
     [null, {key: 5, value: 'e'}]
   ]
-  
+
   diffs.on('data', function (diff) {
     t.equal(JSON.stringify(diff), JSON.stringify(expects.shift()))
   })
@@ -41,13 +41,13 @@ test('emits pairs of diffs for same key', function (t) {
 
   b.write({key: 1, value: 'b'})
   b.end()
-  
+
   var diffs = diffStream(a, b)
-  
+
   var expects = [
     [{key: 1, value: 'a'}, {key: 1, value: 'b'}],
   ]
-  
+
   diffs.on('data', function (diff) {
     t.equal(JSON.stringify(diff), JSON.stringify(expects.shift()))
   })
@@ -63,15 +63,40 @@ test('custom isEqual', function (t) {
 
   b.write({key: 1, value: 'a'})
   b.end()
-  
+
   var diffs = diffStream(a, b, function isNeverEqual (a, b, cb) {
     cb(null, false)
   })
-  
+
   var expects = [
     [{key: 1, value: 'a'}, {key: 1, value: 'a'}],
   ]
-  
+
+  diffs.on('data', function (diff) {
+    t.equal(JSON.stringify(diff), JSON.stringify(expects.shift()))
+  })
+})
+
+test('custom compare', function (t) {
+  t.plan(2)
+  var a = through.obj()
+  var b = through.obj()
+
+  a.write({key: Buffer("0"), value: 'a'})
+  a.end()
+
+  b.write({key: Buffer("0"), value: 'a'})
+  b.end()
+
+  var diffs = diffStream(a, b, null, function isNeverSame (a, b, cb) {
+    cb(null, 1)
+  })
+
+  var expects = [
+    [null, {key: Buffer("0"), value: 'a'}],
+    [{key: Buffer("0"), value: 'a'}, null]
+  ]
+
   diffs.on('data', function (diff) {
     t.equal(JSON.stringify(diff), JSON.stringify(expects.shift()))
   })
